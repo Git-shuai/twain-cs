@@ -569,7 +569,7 @@ namespace TWAINCSScan
             }
 
             // Copy into the buffer, and bump up our byte tally...
-            TWAIN.MemCpy(m_intptrImage + m_iImageBytes, m_intptrXfer, (int)twimagememxfer.BytesWritten);
+            TWAIN.MemCpy(XkwExtensions.Add(m_intptrImage, m_iImageBytes), m_intptrXfer, (int)twimagememxfer.BytesWritten);
             m_iImageBytes += (int)twimagememxfer.BytesWritten;
 
             // If we saw XFERDONE we can save the image, display it,

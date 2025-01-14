@@ -696,7 +696,7 @@ namespace TWAINCSTst
             }
 
             // Copy into the buffer, and bump up our byte tally...
-            TWAIN.MemCpy(m_intptrImage + m_iImageBytes, m_intptrXfer, (int)twimagememxfer.BytesWritten);
+            TWAIN.MemCpy(XkwExtensions.Add(m_intptrImage, m_iImageBytes), m_intptrXfer, (int)twimagememxfer.BytesWritten);
             m_iImageBytes += (int)twimagememxfer.BytesWritten;
 
             // If we saw XFERDONE we can save the image, display it,
@@ -1105,7 +1105,7 @@ namespace TWAINCSTst
             }
 
             // Copy into the buffer, and bump up our byte tally...
-            TWAIN.MemCpy(m_intptrImage + m_iImageBytes, m_intptrXfer, (int)twimagememxfer.BytesWritten);
+            TWAIN.MemCpy(XkwExtensions.Add(m_intptrImage, m_iImageBytes), m_intptrXfer, (int)twimagememxfer.BytesWritten);
             m_iImageBytes += (int)twimagememxfer.BytesWritten;
 
             // If we saw XFERDONE we can save the image, display it,
@@ -1949,7 +1949,7 @@ namespace TWAINCSTst
                 }
                 else
                 {
-                    if (!Enum.TryParse(a_szDg.ToUpperInvariant().Substring(3), out dg))
+                    if (!EnumExtensions.TryParse(a_szDg.ToUpperInvariant().Substring(3), out dg))
                     {
                         WriteOutput("Unrecognized dg - <" + a_szDg + ">");
                         return (TWAIN.STS.BADPROTOCOL);
@@ -1977,7 +1977,7 @@ namespace TWAINCSTst
                 }
                 else
                 {
-                    if (!Enum.TryParse(a_szDat.ToUpperInvariant().Substring(4), out dat))
+                    if (!EnumExtensions.TryParse(a_szDat.ToUpperInvariant().Substring(4), out dat))
                     {
                         WriteOutput("Unrecognized dat - <" + a_szDat + ">");
                         return (TWAIN.STS.BADPROTOCOL);
@@ -2005,7 +2005,7 @@ namespace TWAINCSTst
                 }
                 else
                 {
-                    if (!Enum.TryParse(a_szMsg.ToUpperInvariant().Substring(4), out msg))
+                    if (!EnumExtensions.TryParse(a_szMsg.ToUpperInvariant().Substring(4), out msg))
                     {
                         WriteOutput("Unrecognized msg - <" + a_szMsg + ">");
                         return (TWAIN.STS.BADPROTOCOL);
@@ -2462,8 +2462,8 @@ namespace TWAINCSTst
                         {
                             TWAIN.TWCY twcy = TWAIN.TWCY.USA;
                             TWAIN.TWLG twlg = TWAIN.TWLG.ENGLISH_USA;
-                            Enum.TryParse<TWAIN.TWCY>(aszTwidentity[6], out twcy);
-                            Enum.TryParse<TWAIN.TWLG>(aszTwidentity[8], out twlg);
+                            EnumExtensions.TryParse<TWAIN.TWCY>(aszTwidentity[6], out twcy);
+                            EnumExtensions.TryParse<TWAIN.TWLG>(aszTwidentity[8], out twlg);
                             m_twain = new TWAIN
                             (
                                 aszTwidentity[0],

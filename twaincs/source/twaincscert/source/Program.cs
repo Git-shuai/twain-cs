@@ -49,36 +49,32 @@ namespace twaincscert
             string szExecutableName;
             string szWriteFolder;
 
-            // Load our configuration information and our arguments,
-            // so that we can access them from anywhere in the code...
+            // 加载配置文件和参数，以便在代码的任何地方都可以访问它们
             if (!Config.Load(System.Reflection.Assembly.GetEntryAssembly().Location, a_aszArgs, "appdata.txt"))
             {
-                Console.Out.WriteLine("Error starting.  Try uninstalling and reinstalling this software.");
+                Console.Out.WriteLine("启动错误。请尝试卸载并重新安装此软件。");
                 Environment.Exit(1);
             }
 
-            // Set up our data folders...
+            // 设置数据文件夹
             szWriteFolder = Config.Get("writeFolder", "");
             szExecutableName = Config.Get("executableName", "");
 
-            // Turn on logging...
+            // 开启日志记录
             Log.Open(szExecutableName, szWriteFolder, 1);
             Log.SetLevel((int)Config.Get("logLevel", 0));
-            Log.Info(szExecutableName + " Log Started...");
+            Log.Info(szExecutableName + " 日志开始...");
 
-            // Windows needs a window, we need our console and window
-            // in different threads for full control...
+            // Windows 需要一个窗口，我们需要在不同的线程中运行控制台和窗口以获得完全控制
             if (TWAIN.GetPlatform() == TWAIN.Platform.WINDOWS)
             {
-                // Init our form...
+                // 初始化窗体
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 FormMain formmain = new FormMain();
 
-                // Launch the terminal window, we're doing this in
-                // a thread so we can have a console and a form.  When
-                // the thread is done there's no reason to be subtle,
-                // we can exit the application...
+                // 启动终端窗口，我们在一个线程中执行此操作，以便可以同时拥有控制台和窗体
+                // 当线程完成时，我们可以退出应用程序
                 Terminal terminal = new twaincscert.Terminal(formmain);
                 Thread threadTerminal = new Thread(
                     new ThreadStart(
@@ -91,20 +87,19 @@ namespace twaincscert
                 );
                 threadTerminal.Start();
 
-                // Run our form, the exit above will kill it off...
+                // 运行窗体，以上的退出将终止它
                 formmain.SetTerminal(terminal);
                 Application.Run(formmain);
             }
-
-            // Linux and Mac come here, life is much simpler for them...
+            // Linux 和 Mac 的处理方式更简单
             else
             {
                 Terminal terminal = new twaincscert.Terminal(null);
                 terminal.Run();
             }
 
-            // All done...
-            Log.Info(szExecutableName + " Log Ended...");
+            // 完成所有操作
+            Log.Info(szExecutableName + " 日志结束...");
             Log.Close();
             Environment.Exit(0);
         }

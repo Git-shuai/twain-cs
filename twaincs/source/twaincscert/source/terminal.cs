@@ -30,6 +30,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 // Helpers...
+using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.Collections.Generic;
@@ -37,7 +38,6 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Reflection;
 using System.Resources;
 using System.Runtime.InteropServices;
@@ -426,7 +426,7 @@ namespace twaincscert
                 }
                 else
                 {
-                    if (!Enum.TryParse(a_functionarguments.aszCmd[3].ToUpperInvariant().Substring(3), out dg))
+                    if (!EnumExtensions.TryParse(a_functionarguments.aszCmd[3].ToUpperInvariant().Substring(3), out dg))
                     {
                         DisplayRed("Unrecognized dg - <" + a_functionarguments.aszCmd[3] + ">");
                         return (false);
@@ -454,7 +454,7 @@ namespace twaincscert
                 }
                 else
                 {
-                    if (!Enum.TryParse(a_functionarguments.aszCmd[4].ToUpperInvariant().Substring(4), out dat))
+                    if (!EnumExtensions.TryParse(a_functionarguments.aszCmd[4].ToUpperInvariant().Substring(4), out dat))
                     {
                         DisplayRed("Unrecognized dat - <" + a_functionarguments.aszCmd[4] + ">");
                         return (false);
@@ -482,7 +482,7 @@ namespace twaincscert
                 }
                 else
                 {
-                    if (!Enum.TryParse(a_functionarguments.aszCmd[5].ToUpperInvariant().Substring(4), out msg))
+                    if (!EnumExtensions.TryParse(a_functionarguments.aszCmd[5].ToUpperInvariant().Substring(4), out msg))
                     {
                         DisplayRed("Unrecognized msg - <" + a_functionarguments.aszCmd[5] + ">");
                         return (false);
@@ -1088,13 +1088,13 @@ namespace twaincscert
                         }
                         break;
                     case "twcy":
-                        Enum.TryParse(aszKeyValue[1], out twcy);
+                        EnumExtensions.TryParse(aszKeyValue[1], out twcy);
                         break;
                     case "info":
                         szInfo = aszKeyValue[1];
                         break;
                     case "twlg":
-                        Enum.TryParse(aszKeyValue[1], out twlg);
+                        EnumExtensions.TryParse(aszKeyValue[1], out twlg);
                         break;
                     case "majornum":
                         UInt16.TryParse(aszKeyValue[1], out u16MajorNum);
@@ -5441,7 +5441,7 @@ namespace twaincscert
                     }
 
                     // If we don't have the version.txt file, we're updating...
-                    if (!File.Exists(Path.Combine(m_szTwainSelfCertFolder, "data", "version.txt")))
+                    if (!File.Exists(XkwExtensions.PathCombine(m_szTwainSelfCertFolder, "data", "version.txt")))
                     {
                         blUpdate = true;
                     }
@@ -5457,7 +5457,7 @@ namespace twaincscert
                         int iVersionCurrent = 0;
 
                         // Get the assembly file version info from the data/version.txt file...
-                        string szVersionTxt = File.ReadAllText(Path.Combine(m_szTwainSelfCertFolder, "data", "version.txt"));
+                        string szVersionTxt = File.ReadAllText(XkwExtensions.PathCombine(m_szTwainSelfCertFolder, "data", "version.txt"));
                         szVersionTxt = szVersionTxt.Trim().Replace("\r", "").Replace("\n", "");
                         string[] aszVersionTxt = szVersionTxt.Split('.');
 
@@ -5520,7 +5520,53 @@ namespace twaincscert
                         string szDataZip = Path.Combine(szDataTmp, "data.zip");
                         Directory.CreateDirectory(szDataTmp);
                         File.WriteAllBytes(szDataZip, twaincscert.Properties.Resources.data);
-                        ZipFile.ExtractToDirectory(szDataZip, szDataTmp);
+                        //ZipFile.ExtractToDirectory(szDataZip, szDataTmp);
+
+                        // 检查目标目录是否存在
+                        if (!Directory.Exists(szDataTmp))
+                        {
+                            Directory.CreateDirectory(szDataTmp);
+                        }
+
+                        // 使用 SharpZipLib 解压
+                        using (FileStream fs = File.OpenRead(szDataZip))
+                        using (ZipInputStream zipStream = new ZipInputStream(fs))
+                        {
+                            ZipEntry entry;
+                            while ((entry = zipStream.GetNextEntry()) != null)
+                            {
+                                // 构建完整的文件路径
+                                string filePath = Path.Combine(szDataTmp, entry.Name);
+
+                                if (entry.IsDirectory)
+                                {
+                                    // 如果是目录，创建目录
+                                    Directory.CreateDirectory(filePath);
+                                }
+                                else
+                                {
+                                    // 如果是文件，确保父目录存在
+                                    string directoryPath = Path.GetDirectoryName(filePath);
+                                    if (!Directory.Exists(directoryPath))
+                                    {
+                                        Directory.CreateDirectory(directoryPath);
+                                    }
+
+                                    // 写入文件内容
+                                    using (FileStream outputStream = File.Create(filePath))
+                                    {
+                                        byte[] buffer = new byte[4096];
+                                        int bytesRead;
+                                        while ((bytesRead = zipStream.Read(buffer, 0, buffer.Length)) > 0)
+                                        {
+                                            outputStream.Write(buffer, 0, bytesRead);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Console.WriteLine("解压完成！");
                     }
 
                     // Copy the temporary data folder to the data folder...
@@ -5747,12 +5793,12 @@ namespace twaincscert
             {
                 if (m_autoreseteventMsgDatNull != null)
                 {
-                    m_autoreseteventMsgDatNull.Dispose();
+                    m_autoreseteventMsgDatNull.Close();
                     m_autoreseteventMsgDatNull = null;
                 }
                 if (m_autoreseteventScannerslist != null)
                 {
-                    m_autoreseteventScannerslist.Dispose();
+                    m_autoreseteventScannerslist.Close();
                     m_autoreseteventScannerslist = null;
                 }
                 if (m_twain != null)
@@ -6447,7 +6493,7 @@ namespace twaincscert
                         // Do the lookup...
                         if (aszGetTwei.Length > 1)
                         {
-                            if (Enum.TryParse(aszGetTwei[0].Replace("TWEI_", "").Replace("twei_", ""), out twei))
+                            if (EnumExtensions.TryParse(aszGetTwei[0].Replace("TWEI_", "").Replace("twei_", ""), out twei))
                             {
                                 szValue = TWAIN.CvtTweiValueToEnum(twei, aszGetTwei[1]);
                             }
@@ -7233,7 +7279,7 @@ namespace twaincscert
         /// </summary>
         public static void ElevateButton(IntPtr a_intptrHandle)
         {
-            NativeMethods.SendMessage(a_intptrHandle, NativeMethods.BCM_SETSHIELD, IntPtr.Zero, IntPtr.Zero - 1);
+            NativeMethods.SendMessage(a_intptrHandle, NativeMethods.BCM_SETSHIELD, IntPtr.Zero, XkwExtensions.Add(IntPtr.Zero, -1));
         }
 
         #endregion
